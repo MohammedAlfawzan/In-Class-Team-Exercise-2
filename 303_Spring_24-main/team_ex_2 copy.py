@@ -6,6 +6,8 @@ import os
 def convert_to_str(obj):
     if isinstance(obj, list):
         return '\n'.join(obj)
+    elif isinstance(obj, (str, int, float)):
+        return str(obj)
     return ''
 
 def safe_filename(title):
@@ -25,14 +27,10 @@ def dl_and_save(topic, search_term):
         with open(file_name, 'w', encoding='utf-8') as file:
             file.write(references)
         print(f"Saved references for '{page.title}' to '{file_name}'")
-    except wikipedia.exceptions.PageError:
-        print(f"No page found for '{topic}'")
-    except wikipedia.exceptions.DisambiguationError as error:
-        print(f"Disambiguation error for '{topic}', options are: {error.options}")
     except Exception as e:
         print(f"An error occurred with '{topic}': {e}")
 
-def download_and_save_all(search_term):
+def download_and_save_all(search_term, mode):
     topics = wikipedia.search(search_term)
     if not topics:
         print(f"No results found for '{search_term}'.")
@@ -40,18 +38,25 @@ def download_and_save_all(search_term):
     
     print(f"Found topics for '{search_term}': {topics}")
 
-    for topic in topics:
-        dl_and_save(topic, search_term)
+    if mode == 'sequential':
+        for topic in topics:
+            dl_and_save(topic, search_term)
+    elif mode == 'threaded':
+        with ThreadPoolExecutor() as executor:
+            executor.map(lambda topic: dl_and_save(topic, search_term), topics)
+    elif mode == 'process':
+        with ProcessPoolExecutor() as executor:
+            executor.map(lambda topic: dl_and_save(topic, search_term), topics)
 
 if __name__ == "__main__":
     user_input = input("Enter a search term: ")
-    search_term = user_input.strip()
+    search_term = user_input.strip() if len(user_input.strip()) >= 4 else "generative artificial intelligence"
     
-    if len(search_term) < 4:
-        print("Search term is too short, defaulting to 'generative artificial intelligence'.")
-        search_term = "generative artificial intelligence"
-    
-    print(f"Searching for and downloading pages related to '{search_term}'...")
+    mode_input = input("Choose mode (sequential/threaded/process): ").strip().lower()
+    valid_modes = ['sequential', 'threaded', 'process']
+    mode = mode_input if mode_input in valid_modes else 'sequential'
+
+    print(f"Searching for and downloading pages related to '{search_term}' using {mode} mode...")
     start_time = time.time()
-    download_and_save_all(search_term)
+    download_and_save_all(search_term, mode=mode)
     print(f"Operation completed in {time.time() - start_time} seconds.")
