@@ -1,8 +1,7 @@
 # Pair Exercise #4
 
+## Ahmed Alanazi
 ## Mohammed Alfawzan
-## Aote Xin
-## Akhilesh Rajeswari
 
 
 # wikipedia 
